@@ -39,18 +39,18 @@ BUILD_DIR='/tmp/nginx_install'
 BASH_PWD=`pwd`
 
 rm -rf ${BUILD_DIR} && mkdir -p ${BUILD_DIR}
-cd ${BASH_PWD}
+cd ${BASH_PWD}/src
 
 echo -e "\033[32m ============================================= \033[0m"
 echo "2. decompression source code"
 echo -e "\033[32m ============================================= \033[0m"
 
-tar xf ${luajit}.tar.gz -C ${BUILD_DIR}
-tar xf ${openssl}.tar.gz -C ${BUILD_DIR}
-tar xf ${pcre}.tar.gz -C ${BUILD_DIR}
-tar xf ${tengine}.tar.gz -C ${BUILD_DIR}
-tar xf ${jemalloc}.tar.bz2 -C ${BUILD_DIR}
-cp ${BASH_PWD}/lua-resty-core -rf ${BUILD_DIR}
+tar -xf ${luajit}.tar.gz -C ${BUILD_DIR}
+tar -xf ${openssl}.tar.gz -C ${BUILD_DIR}
+tar -xf ${pcre}.tar.gz -C ${BUILD_DIR}
+tar -xf ${tengine}.tar.gz -C ${BUILD_DIR}
+tar -xf ${jemalloc}.tar.bz2 -C ${BUILD_DIR}
+cp ${BASH_PWD}/modules/lua-resty-core -rf ${BUILD_DIR}
 
 #### install luajit
 echo -e "\033[32m ============================================= \033[0m"
@@ -186,7 +186,7 @@ echo -e "\033[32m ============================================= \033[0m"
 mkdir /home/work/nginx/conf.d
 cp ${BASH_PWD}/nginx.conf /home/work/nginx/conf/nginx.conf
 
-/home/work/nginx/sbin/ngnix -t
+/home/work/nginx/sbin/nginx -t
 
 
 if [[ `echo $?` = 0 ]] ; then
