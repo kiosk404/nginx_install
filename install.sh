@@ -50,12 +50,16 @@ tar -xf ${openssl}.tar.gz -C ${BUILD_DIR}
 tar -xf ${pcre}.tar.gz -C ${BUILD_DIR}
 tar -xf ${tengine}.tar.gz -C ${BUILD_DIR}
 tar -xf ${jemalloc}.tar.bz2 -C ${BUILD_DIR}
+mkdir ${BASH_PWD}/modules
+cd ${BASH_PWD}/modules
+git clone https://github.com/openresty/lua-resty-core.git
 cp ${BASH_PWD}/modules/lua-resty-core -rf ${BUILD_DIR}
 
 #### install luajit
 echo -e "\033[32m ============================================= \033[0m"
 echo "3. build lua"
 echo -e "\033[32m ============================================= \033[0m"
+cd ${BUILD_DIR}
 cd ${BUILD_DIR}/lua-resty-core/
 make install
 cd ${BUILD_DIR}/${luajit}
