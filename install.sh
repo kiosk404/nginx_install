@@ -103,10 +103,10 @@ echo -e "\033[32m ============================================= \033[0m"
 
 cd ${BUILD_DIR}/${tengine}/modules/
 
-cp -rf ${BASH_PWD}/modules/ngx_devel_kit .
-cp -rf ${BASH_PWD}/modules/echo-nginx-module .
-cp -rf ${BASH_PWD}/modules/headers-more-nginx-module .
-cp -rf ${BASH_PWD}/modules/ngx_cache_purge .
+git clone https://github.com/vision5/ngx_devel_kit.git
+git clone https://github.com/openresty/echo-nginx-module.git
+git clone https://github.com/openresty/headers-more-nginx-module.git
+git clone https://github.com/FRiCKLE/ngx_cache_purge.git
 
 cd ${BUILD_DIR}/${tengine}
 #### 修改tengine server tag
