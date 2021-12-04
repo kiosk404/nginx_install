@@ -104,25 +104,35 @@ fi
 echo -e "\033[32m ============================================= \033[0m"
 echo "5. build tengine"
 echo -e "\033[32m ============================================= \033[0m"
-
 cd ${BUILD_DIR}/${tengine}/modules/
 
+git clone https://github.com/arut/nginx-rtmp-module.git
 git clone https://github.com/vision5/ngx_devel_kit.git
 git clone https://github.com/openresty/echo-nginx-module.git
 git clone https://github.com/openresty/headers-more-nginx-module.git
 git clone https://github.com/FRiCKLE/ngx_cache_purge.git
 
+git clone https://github.com/bagder/libbrotli
+cd libbrotli
+./autogen.sh
+./configure && make && make install
+
+cd ${BUILD_DIR}/${tengine}/modules/
+git clone https://github.com/google/ngx_brotli
+cd ngx_brotli && git submodule update --init
+cd -
+
 cd ${BUILD_DIR}/${tengine}
 #### 修改tengine server tag
-sed -i 's/tengine/JXWServer/g' ./src/core/nginx.h
-sed -i 's/tengine/JXWServer/g' ./src/core/nginx.c
-sed -i 's/tengine/JXWServer/g' ./src/http/ngx_http_header_filter_module.c
-sed -i 's/tengine/JXWServer/g' ./src/http/ngx_http_special_response.c
+sed -i 's/tengine/KServer/g' ./src/core/nginx.h
+sed -i 's/tengine/KServer/g' ./src/core/nginx.c
+sed -i 's/tengine/KServer/g' ./src/http/ngx_http_header_filter_module.c
+sed -i 's/tengine/KServer/g' ./src/http/ngx_http_special_response.c
 
-sed -i 's/Tengine/JXWServer/g' ./src/core/nginx.h
-sed -i 's/Tengine/JXWServer/g' ./src/core/nginx.c
-sed -i 's/Tengine/JXWServer/g' ./src/http/ngx_http_header_filter_module.c
-sed -i 's/Tengine/JXWServer/g' ./src/http/ngx_http_special_response.c
+sed -i 's/Tengine/KServer/g' ./src/core/nginx.h
+sed -i 's/Tengine/KServer/g' ./src/core/nginx.c
+sed -i 's/Tengine/KServer/g' ./src/http/ngx_http_header_filter_module.c
+sed -i 's/Tengine/KServer/g' ./src/http/ngx_http_special_response.c
 
 # nginx work dir
 useradd work
@@ -147,7 +157,11 @@ useradd work
 --add-module=./modules/ngx_http_upstream_consistent_hash_module \
 --add-module=./modules/ngx_http_proxy_connect_module \
 --add-module=./modules/ngx_http_upstream_keepalive_module \
+--add-module=./modules/ngx_brotli \
+--add-module=./modules/nginx-rtmp-module \
 --without-http_upstream_keepalive_module \
+--with-file-aio \
+--with-http_flv_module \
 --with-http_gunzip_module \
 --with-http_gzip_static_module \
 --with-http_ssl_module \
@@ -166,7 +180,9 @@ useradd work
 --with-http_auth_request_module \
 --with-http_stub_status_module \
 --with-google_perftools_module --with-ld-opt=-ltcmalloc \
---with-http_secure_link_module 
+--with-http_secure_link_module \
+--with-http_mp4_module 
+
 
 make -j32
 make install
