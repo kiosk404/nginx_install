@@ -31,10 +31,10 @@ install_deps() {
 
     if [[ $SYSTEM = "\"CentOS Linux\"" ]]; then
         echo -e "\033[32m CentOS Linux : \033[0m"
-        yum -y install git gcc gcc-c++ autoconf zlib-devel make gperftools gperftools-devel gperftools-libs pcre-devel openssl-devel geoip-devel libxml2-devel libxslt-devel gd-devel libatomic libncurses-devel readline-devel
+        yum -y install git gcc gcc-c++ autoconf zlib-devel make cmake gperftools gperftools-devel gperftools-libs pcre-devel openssl-devel geoip-devel libxml2-devel libxslt-devel gd-devel libatomic libncurses-devel readline-devel
     elif [[ $SYSTEM = "\"Ubuntu\"" ]]; then
         echo -e "\033[32m Ubuntu : \033[0m"
-        apt install -y git gcc g++ autoconf zlib1g-dev make google-perftools libgoogle-perftools-dev libgoogle-perftools4 libpcre3-dev libssl-dev libgeoip-dev libxml2-dev libxslt1-dev libgd-dev libatomic1 libncurses5-dev libreadline-dev
+        apt install -y git gcc g++ autoconf zlib1g-dev make cmake libunwind-dev golang google-perftools libgoogle-perftools-dev libgoogle-perftools4 libpcre3-dev libssl-dev libgeoip-dev libxml2-dev libxslt1-dev libgd-dev libatomic1 libncurses5-dev libreadline-dev
     else
         echo "What?"
         echo $SYSTEM
@@ -54,8 +54,6 @@ install_modules() {
     tar -xf ${tengine}.tar.gz -C ${BUILD_DIR}
     tar -xf ${jemalloc}.tar.bz2 -C ${BUILD_DIR}
     tar -xf ${nginx}.tar.gz -C ${BUILD_DIR}
-
-    cp ${BASH_PWD}/modules/lua-resty-core -rf ${BUILD_DIR}
 }
 
 # 安装 LuaJIT
@@ -63,10 +61,20 @@ install_luajit() {
     echo -e "\033[32m ============================================= \033[0m"
     echo "3. build lua"
     echo -e "\033[32m ============================================= \033[0m"
+
+    cd ${BUILD_DIR}
+    git clone https://github.com/openresty/lua-resty-core.git
+    git clone https://github.com/openresty/lua-resty-lrucache.git
+
     cd ${BUILD_DIR}/lua-resty-core/
     make install
+
+    cd ${BUILD_DIR}/lua-resty-lrucache
+    make install
+
     cd ${BUILD_DIR}/${luajit}
     make && make install
+    
     setup_luajit_env
 
     if [[ $? = 0 ]] ; then
@@ -121,21 +129,21 @@ install_tengine_module() {
     cd ${BUILD_DIR}/${tengine}/modules/
 
     
-    cp -rf ngx_http_upstream_dyups_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_concat_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_upstream_session_sticky_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_upstream_check_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_upstream_dynamic_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_lua_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_backtrace_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_reqstat_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_user_agent_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_multi_upstream_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_slab_stat ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_sysguard_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_upstream_consistent_hash_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_proxy_connect_module ${BUILD_DIR}/${tengine}/modules/
-    cp -rf ngx_http_upstream_keepalive_module ${BUILD_DIR}/${tengine}/modules/    
+    cp -rf ngx_http_upstream_dyups_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_concat_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_upstream_session_sticky_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_upstream_check_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_upstream_dynamic_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_lua_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_backtrace_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_reqstat_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_user_agent_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_multi_upstream_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_slab_stat ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_sysguard_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_upstream_consistent_hash_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_proxy_connect_module ${BUILD_DIR}/${nginx}/modules/
+    cp -rf ngx_http_upstream_keepalive_module ${BUILD_DIR}/${nginx}/modules/    
 }
 
 # 下载其他 Nignx Module
@@ -144,62 +152,52 @@ install_other_module() {
 
     git clone https://github.com/arut/nginx-rtmp-module.git
     git clone https://github.com/vision5/ngx_devel_kit.git
-    git clone https://github.com/openresty/echo-nginx-module.git
     git clone https://github.com/FRiCKLE/ngx_cache_purge.git
+    git clone https://github.com/openresty/echo-nginx-module.git
+    git clone https://github.com/openresty/lua-nginx-module.git
+    git clone https://github.com/openresty/headers-more-nginx-module.git
 
-    git clone https://github.com/bagder/libbrotli
-    cd libbrotli
-    ./autogen.sh
-    ./configure && make && make install
-
-    cd ${BUILD_DIR}/${tengine}/modules/
-    git clone https://github.com/google/ngx_brotli
+    cd ${BUILD_DIR}/${nginx}/modules/
+    git clone --recursive https://github.com/google/ngx_brotli
     cd ngx_brotli && git submodule update --init
-    cd -
+
+    # boring ssl 
+    cd ${BUILD_DIR}/${nginx}/modules/
+    git clone https://github.com/google/boringssl
+    cd boringssl/
+    mkdir build
+    cd build
+    cmake ../
+    make -j 16
 }
 
 # 安装
-compile_tengine() {
+compile_nginx() {
     cd ${BUILD_DIR}/${nginx}
     #### 修改 nginx server tag
-    sed -i 's/nginx/kiosk007/g' ./src/core/nginx.h
-    sed -i 's/nginx/kiosk007/g' ./src/core/nginx.c
-    sed -i 's/nginx/kiosk007/g' ./src/http/ngx_http_header_filter_module.c
-    sed -i 's/nginx/kiosk007/g' ./src/http/ngx_http_special_response.c
+    sed -i "s#\"NGINX\"#\"Kiosk\"#" src/core/nginx.h
+    sed -i "s#\"nginx/\"#\"Kiosk/\"#" src/core/nginx.h
+    sed -i "s#Server: nginx#Server: kiosk#" src/http/ngx_http_header_filter_module.c
+    sed -i "s#\"<hr><center>nginx<\/center>\"#\"<hr><center>kiosk<\/center>\"#" src/http/ngx_http_special_response.c
 
-    sed -i 's/NGINX/KIOSK007/g' ./src/core/nginx.h
-    sed -i 's/NGINX/KIOSK007/g' ./src/core/nginx.c
-    sed -i 's/NGINX/KIOSK007/g' ./src/http/ngx_http_header_filter_module.c
-    sed -i 's/NGINX/KIOSK007/g' ./src/http/ngx_http_special_response.c
+    . /etc/profile
 
     ./configure --prefix=/home/work/nginx --error-log-path=/home/work/log/nginx/nginx.log \
-        --add-module=./modules/ngx_http_upstream_dyups_module \
-        --add-module=./modules/ngx_http_concat_module \
-        --add-module=./modules/ngx_http_upstream_session_sticky_module \
-        --add-module=./modules/ngx_http_upstream_check_module \
-        --add-module=./modules/ngx_http_upstream_dynamic_module \
-        --add-module=./modules/ngx_http_lua_module \
-        --add-module=./modules/ngx_backtrace_module \
-        --add-module=./modules/ngx_http_reqstat_module \
-        --add-module=./modules/ngx_http_user_agent_module \
-        --add-module=./modules/ngx_multi_upstream_module \
-        --add-module=./modules/ngx_cache_purge \
-        --add-module=./modules/ngx_devel_kit \
+        --with-debug \
         --add-module=./modules/echo-nginx-module \
         --add-module=./modules/ngx_slab_stat \
         --add-module=./modules/ngx_http_sysguard_module \
-        --add-module=./modules/ngx_http_upstream_consistent_hash_module \
-        --add-module=./modules/ngx_http_proxy_connect_module \
-        --add-module=./modules/ngx_http_upstream_keepalive_module \
         --add-module=./modules/ngx_brotli \
         --add-module=./modules/nginx-rtmp-module \
-        --without-http_upstream_keepalive_module \
+        --add-module=./modules/headers-more-nginx-module \
+        --add-module=./modules/lua-nginx-module \
         --with-file-aio \
         --with-http_flv_module \
         --with-http_gunzip_module \
         --with-http_gzip_static_module \
         --with-http_ssl_module \
         --with-http_v2_module \
+        --with-http_v3_module \
         --with-http_realip_module \
         --with-http_addition_module \
         --without-mail_pop3_module \
@@ -208,14 +206,14 @@ compile_tengine() {
         --with-http_sub_module \
         --with-pcre=${BUILD_DIR}/${pcre} --with-pcre-jit \
         --with-openssl=${BUILD_DIR}/${openssl} --with-openssl-opt=enable-shared \
-        --with-jemalloc=${BUILD_DIR}/${jemalloc} \
-        --with-luajit-inc=/usr/local/include/luajit-2.0 \
-        --with-luajit-lib=/usr/local/lib \
+        --with-ld-opt=-Wl,-rpath,/usr/local/luajit/lib  \
+        --with-cc-opt="-I../boringssl/include" --with-ld-opt="-L../boringssl/build/ssl -L../boringssl/build/crypto" \
         --with-http_auth_request_module \
         --with-http_stub_status_module \
         --with-google_perftools_module --with-ld-opt=-ltcmalloc \
         --with-http_secure_link_module \
-        --with-http_mp4_module 
+        --with-http_mp4_module \
+        --without-http_upstream_keepalive_module
 
     make -j32
     make install
@@ -223,16 +221,16 @@ compile_tengine() {
 
 
     if [[ $? = 0 ]] ; then
-        echo -e "\033[32m tengine build successfully !!! \033[0m"
+        echo -e "\033[32m nginx compile successfully !!! \033[0m"
     else
-        echo -e "\\033[31m tengine build failed !!! \033[0m"
+        echo -e "\\033[31m nginx build failed !!! \033[0m"
         exit 8
     fi
 }
 
 build_nginx() {
     # 编译 Nginx
-    compile_tengine
+    compile_nginx
 
     cp ${BASH_PWD}/nginx.service /etc/systemd/system
     systemctl daemon-reload
